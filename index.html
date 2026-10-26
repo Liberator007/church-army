@@ -136,7 +136,7 @@
       gap: 2.5vh;
     }
 
-    .slide.cover .chip {
+    .slide .chip {
       align-self: flex-start;
       padding: .45em 1em;
       border-radius: 999px;
@@ -152,11 +152,49 @@
       line-height: 1;
     }
 
-    .slide.cover .subtitle {
+    .slide .subtitle {
       color: var(--muted);
       font-size: clamp(18px, 3.6vh, 40px);
       font-weight: 500;
       letter-spacing: -.01em;
+    }
+
+    /* Текстовые слайды (без изображения) */
+    .slide.text {
+      justify-content: safe center;
+      gap: 3vh;
+    }
+
+    .slide.text h1 {
+      font-size: clamp(36px, 10vh, 120px);
+      letter-spacing: -.035em;
+      line-height: 1.05;
+      max-width: 20ch;
+    }
+
+    .slide .list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.6vh;
+      margin-top: 1vh;
+      font-size: clamp(18px, 3.4vh, 40px);
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .slide .list li {
+      display: flex;
+      gap: .8em;
+      align-items: baseline;
+    }
+
+    .slide .list .num {
+      flex: none;
+      min-width: 1.2em;
+      color: var(--accent);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
 
     .dots {
@@ -208,6 +246,10 @@
       .slide { padding: 5vh 16px 8vh; gap: 3vh; }
       .counter { right: 16px; }
       .dots { display: none; }
+      .slide.text { gap: 2vh; }
+      .slide.text h1 { font-size: clamp(28px, 9vw, 44px); }
+      .slide .subtitle { font-size: 18px; }
+      .slide .list { font-size: 17px; gap: 1.2vh; }
     }
   </style>
 </head>
@@ -239,6 +281,26 @@
       { time: "21:20",         title: "прогулка" },
       { time: "21:40",         title: "вечерняя поверка" },
       { time: "22:00",         title: "отбой" },
+    ];
+
+    // Блок «Скользкие моменты» (Notion: Армия → Программа → 6) Скользкие моменты).
+    // Слайды без изображений: у темы с подпунктами сначала слайд со списком,
+    // затем по слайду на каждый подпункт.
+    const TOPICS = [
+      {
+        title: "Дедовщина (неуставные отношения)",
+        items: [
+          "Деление на периоды",
+          "Правила и ограничения",
+          "Чем мелкая «традиция» отличается от того, что нельзя терпеть",
+        ],
+      },
+      { title: "Воровство и деньги" },
+      { title: "Как говорить «нет»" },
+      { title: "К кому обращаться" },
+      { title: "Особенности тех, кто не принимает присяги" },
+      { title: "Одиночество" },
+      { title: "Испытания и искушения (давление быть как все)" },
     ];
 
     const EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
@@ -302,7 +364,47 @@
       return slide;
     }
 
-    const slides = [buildCover(), ...SLIDES.map(buildSlide)];
+    function list(items, numbering) {
+      const ol = el("ol", "list");
+      items.forEach((text, i) => {
+        const li = el("li");
+        li.append(el("span", "num", numbering(i)), el("span", null, text));
+        ol.append(li);
+      });
+      return ol;
+    }
+
+    function buildTextSlide(chip, title, extra) {
+      const slide = el("section", "slide text");
+      if (chip) slide.append(el("div", "chip", chip));
+      slide.append(el("h1", null, title), ...extra);
+      return slide;
+    }
+
+    function buildTopicsCover() {
+      return buildTextSlide(null, "Скользкие моменты", [
+        el("div", "subtitle", "Обсуждаем проблемные ситуации в армии"),
+        list(TOPICS.map(t => t.title), i => String(i + 1)),
+      ]);
+    }
+
+    function buildTopicSlides(topic, index) {
+      const n = index + 1;
+      const items = topic.items || [];
+      const shortTitle = topic.title.replace(/\s*\(.*\)$/, "");
+      return [
+        buildTextSlide(`Скользкие моменты · ${n}`, topic.title,
+          items.length ? [list(items, i => `${n}.${i + 1}`)] : []),
+        ...items.map((item, i) => buildTextSlide(`${shortTitle} · ${n}.${i + 1}`, item, [])),
+      ];
+    }
+
+    const slides = [
+      buildCover(),
+      ...SLIDES.map(buildSlide),
+      buildTopicsCover(),
+      ...TOPICS.flatMap(buildTopicSlides),
+    ];
     deck.append(...slides);
     const dotNodes = slides.map(() => el("span"));
     dots.append(...dotNodes);
