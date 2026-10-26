@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Распорядок дня</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1c2018;
+      --bg-accent: #262b20;
+      --text: #f2f0e6;
+      --muted: #a8ab98;
+      --accent: #c9b458;
+      --placeholder: #2f3528;
+      --placeholder-border: #4a5240;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 4vh 4vw 6vh;
+      gap: 3vh;
+      background: radial-gradient(ellipse at top, var(--bg-accent), var(--bg) 70%);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .35s ease, visibility .35s;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .slide h1 {
+      flex: none;
+      font-weight: 700;
+      font-size: clamp(28px, 7vh, 96px);
+      line-height: 1.1;
+      text-align: center;
+      letter-spacing: .01em;
+    }
+
+    .slide h1 .time {
+      color: var(--accent);
+    }
+
+    .slide .media {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide .media img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+    }
+
+    .slide .placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 3px dashed var(--placeholder-border);
+      border-radius: 12px;
+      background: var(--placeholder);
+      color: var(--muted);
+      font-size: clamp(16px, 2.6vh, 28px);
+      font-weight: 500;
+      padding: 16px;
+    }
+
+    /* Титульный слайд */
+    .slide.cover {
+      justify-content: center;
+      align-items: center;
+    }
+
+    .slide.cover h1 {
+      font-size: clamp(40px, 13vh, 160px);
+      text-transform: uppercase;
+    }
+
+    .slide.cover .subtitle {
+      color: var(--accent);
+      font-size: clamp(18px, 4vh, 48px);
+      font-weight: 500;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    .hud {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 6px;
+      background: rgba(255, 255, 255, .08);
+      z-index: 10;
+    }
+
+    .hud .bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      transition: width .35s ease;
+    }
+
+    .counter {
+      position: fixed;
+      right: 16px;
+      bottom: 14px;
+      color: var(--muted);
+      font-size: 16px;
+      z-index: 10;
+    }
+
+    .nav {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: 20vw;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    .nav.prev { left: 0; cursor: w-resize; }
+    .nav.next { right: 0; cursor: e-resize; }
+
+    @media (max-width: 600px) {
+      .slide { padding: 3vh 16px 5vh; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck"></main>
+
+  <div class="nav prev" id="prev" aria-label="Назад"></div>
+  <div class="nav next" id="next" aria-label="Вперёд"></div>
+  <div class="counter" id="counter"></div>
+  <div class="hud"><div class="bar" id="bar"></div></div>
+
+  <script>
+    // Пункты распорядка дня (Notion: Армия → Программа → 4) Распорядок дня).
+    // Изображения кладите в папку images/ с номером слайда в имени:
+    // images/01.jpg, images/02.png и т.д. (подходят .jpg, .jpeg, .png, .webp).
+    // Можно указать и свой путь через поле image: "images/что-угодно.jpg".
+    const SLIDES = [
+      { time: "6:00",          title: "подъём" },
+      { time: "6:10",          title: "зарядка / уборка территории" },
+      { time: "6:50",          title: "утренний осмотр" },
+      { time: "7:10",          title: "построение на завтрак, завтрак" },
+      { time: "8:30",          title: "развод" },
+      { time: "12:50",         title: "контрольное построение, обед" },
+      { time: "14:30",         title: "второй развод" },
+      { time: "17:50",         title: "контрольное построение" },
+      { time: "18:30",         title: "ужин" },
+      { time: "19:00 / 19:30", title: "свободное время" },
+      { time: "21:00",         title: "«Панорама»" },
+      { time: "21:20",         title: "прогулка" },
+      { time: "21:40",         title: "вечерняя поверка" },
+      { time: "22:00",         title: "отбой" },
+    ];
+
+    const EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+
+    const deck = document.getElementById("deck");
+    const counter = document.getElementById("counter");
+    const bar = document.getElementById("bar");
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text) node.textContent = text;
+      return node;
+    }
+
+    // Пробует по очереди все расширения; если ни одного файла нет — показывает заглушку.
+    function loadImage(media, candidates, placeholderText) {
+      if (!candidates.length) {
+        media.replaceChildren(el("div", "placeholder", placeholderText));
+        return;
+      }
+      const img = new Image();
+      img.alt = "";
+      img.onload = () => media.replaceChildren(img);
+      img.onerror = () => loadImage(media, candidates.slice(1), placeholderText);
+      img.src = candidates[0];
+    }
+
+    function buildCover() {
+      const slide = el("section", "slide cover");
+      slide.append(el("h1", null, "Распорядок дня"), el("div", "subtitle", "Один день в армии"));
+      return slide;
+    }
+
+    function buildSlide(item, index) {
+      const slide = el("section", "slide");
+      const h1 = el("h1");
+      h1.append(el("span", "time", item.time), document.createTextNode(" — " + item.title));
+
+      const media = el("div", "media");
+      const num = String(index + 1).padStart(2, "0");
+      const candidates = item.image ? [item.image] : EXTENSIONS.map(ext => `images/${num}.${ext}`);
+      loadImage(media, candidates, `Изображение: images/${num}.jpg`);
+
+      slide.append(h1, media);
+      return slide;
+    }
+
+    const slides = [buildCover(), ...SLIDES.map(buildSlide)];
+    deck.append(...slides);
+
+    let current = 0;
+
+    function show(i) {
+      current = Math.max(0, Math.min(slides.length - 1, i));
+      slides.forEach((s, n) => s.classList.toggle("active", n === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      bar.style.width = `${(current / (slides.length - 1)) * 100}%`;
+      history.replaceState(null, "", `#${current + 1}`);
+    }
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen?.();
+    }
+
+    document.addEventListener("keydown", e => {
+      switch (e.key) {
+        case "ArrowRight": case "ArrowDown": case "PageDown": case " ": case "Enter":
+          e.preventDefault(); show(current + 1); break;
+        case "ArrowLeft": case "ArrowUp": case "PageUp": case "Backspace":
+          e.preventDefault(); show(current - 1); break;
+        case "Home": show(0); break;
+        case "End": show(slides.length - 1); break;
+        case "f": case "F": case "а": case "А": toggleFullscreen(); break;
+      }
+    });
+
+    document.getElementById("prev").addEventListener("click", () => show(current - 1));
+    document.getElementById("next").addEventListener("click", () => show(current + 1));
+
+    let touchX = null;
+    document.addEventListener("touchstart", e => { touchX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener("touchend", e => {
+      if (touchX === null) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+      touchX = null;
+    });
+
+    const fromHash = () => show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+    window.addEventListener("hashchange", fromHash);
+    fromHash();
+  </script>
+</body>
+</html>
