@@ -292,7 +292,7 @@
       { title: "Уборка",        image: "images/extra-uborka.jpg" },
     ];
 
-    // Блок «Скользкие моменты» (Notion: Армия → Программа → 6) Скользкие моменты).
+    // Блок «Проблемные моменты» (Notion: Армия → Программа → 6) Проблемные моменты).
     // Слайды без изображений: у темы с подпунктами сначала слайд со списком,
     // затем по слайду на каждый подпункт.
     const TOPICS = [
@@ -392,7 +392,7 @@
     }
 
     function buildTopicsCover() {
-      return buildTextSlide(null, "Скользкие моменты", [
+      return buildTextSlide(null, "Проблемные моменты", [
         el("div", "subtitle", "Обсуждаем проблемные ситуации в армии"),
         list(TOPICS.map(t => t.title), i => String(i + 1)),
       ]);
@@ -403,7 +403,7 @@
       const items = topic.items || [];
       const shortTitle = topic.title.replace(/\s*\(.*\)$/, "");
       return [
-        buildTextSlide(`Скользкие моменты · ${n}`, topic.title,
+        buildTextSlide(`Проблемные моменты · ${n}`, topic.title,
           items.length ? [list(items, i => `${n}.${i + 1}`)] : []),
         ...items.map((item, i) => buildTextSlide(`${shortTitle} · ${n}.${i + 1}`, item, [])),
       ];
