@@ -402,6 +402,13 @@
       return slide;
     }
 
+    // Финальный слайд, оформлен как титульный.
+    function buildQaSlide() {
+      const slide = el("section", "slide cover");
+      slide.append(el("h1", null, "Вопросы-ответы"));
+      return slide;
+    }
+
     function buildSectionCover(section) {
       return buildTextSlide(null, section.title, [
         ...(section.subtitle ? [el("div", "subtitle", section.subtitle)] : []),
@@ -428,6 +435,7 @@
         buildSectionCover(section),
         ...section.topics.flatMap((topic, i) => buildTopicSlides(section, topic, i)),
       ]),
+      buildQaSlide(),
     ];
     deck.append(...slides);
     const dotNodes = slides.map(() => el("span"));
