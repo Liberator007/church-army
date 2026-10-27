@@ -283,6 +283,15 @@
       { time: "22:00",         title: "отбой" },
     ];
 
+    // Дополнительные слайды с фото сразу после распорядка дня (без времени).
+    const EXTRAS = [
+      { title: "Кантик",        image: "images/extra-kantik.jpg" },
+      { title: "Команда пожар", image: "images/extra-komanda-pozhar.jpg" },
+      { title: "Полосы",        image: "images/extra-polosy.jpg" },
+      { title: "ПХД",           image: "images/extra-phd.jpg" },
+      { title: "Уборка",        image: "images/extra-uborka.jpg" },
+    ];
+
     // Блок «Скользкие моменты» (Notion: Армия → Программа → 6) Скользкие моменты).
     // Слайды без изображений: у темы с подпунктами сначала слайд со списком,
     // затем по слайду на каждый подпункт.
@@ -353,7 +362,8 @@
     function buildSlide(item, index) {
       const slide = el("section", "slide");
       const h1 = el("h1");
-      h1.append(el("span", "time", item.time), el("span", "dash", " — "), document.createTextNode(item.title));
+      if (item.time) h1.append(el("span", "time", item.time), el("span", "dash", " — "));
+      h1.append(document.createTextNode(item.title));
 
       const media = el("div", "media");
       const num = String(index + 1).padStart(2, "0");
@@ -402,6 +412,7 @@
     const slides = [
       buildCover(),
       ...SLIDES.map(buildSlide),
+      ...EXTRAS.map(buildSlide),
       buildTopicsCover(),
       ...TOPICS.flatMap(buildTopicSlides),
     ];
